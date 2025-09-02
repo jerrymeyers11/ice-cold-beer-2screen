@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <!-- Added viewport meta tag for responsiveness -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no, user-scalable=no" />
+    <title>Ice Cold Beer</title> <!-- You can change this title -->
+    <link
+      rel="preload"
+      href="assets/digital7mono.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <style>
+        @font-face {
+          font-family: 'Digital7';
+          src: url('assets/digital7mono.woff2') format('woff2'),
+               url('assets/digital7mono.woff')  format('woff'),
+               url('assets/digital7mono.ttf')   format('truetype');
+          font-weight: normal;
+          font-style: normal;
+        }
+
+        /* CSS for the page background (pillarbox/letterbox areas) */
+        html, body {
+            height: 100%; /* Ensure body takes full viewport height */
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevent scrollbars */
+            background-color: #1a1a1a; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* COLOR FOR PILLARBOXES - Change as needed */
+            /* Or use a background image for pillarboxes:
+            background-image: url('assets/your-page-background.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            */
+        }
+
+        /* This div will be the parent for Phaser's canvas. */
+        /* It's good practice even if Phaser can target the body directly. */
+        #phaser-game-container {
+            width: 100%;
+            height: 100%;
+            display: flex; /* Helps if autoCenter needs a flex parent for some browsers */
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Ensure canvas itself doesn't add extra margin/padding */
+        canvas {
+            display: block;
+        }
+
+        /* You can keep .retro-text if you plan to use HTML elements with this font,
+           but Phaser text objects will need the font loaded and applied differently. */
+        .retro-text {
+          font-family: 'Digital7', monospace;
+        }
+    </style>
+    <!-- Phaser loaded once -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+    <!-- QR code generation - using your proven library -->
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js" 
+            onload="console.log('QR Code library loaded successfully')"
+            onerror="console.error('Failed to load QR Code library')"></script>
+</head>
+<body>
+    <!-- Add a container div for Phaser -->
+    <div id="phaser-game-container">
+        <!-- Phaser will create the canvas inside here -->
+    </div>
+    <script src="main.js"></script>
+</body>
+</html>

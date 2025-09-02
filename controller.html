@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1" />
+    <title>Ice Cold Beer - Controller</title>
+    <style>
+        @font-face {
+          font-family: 'Digital7';
+          src: url('assets/digital7mono.woff2') format('woff2'),
+               url('assets/digital7mono.woff')  format('woff'),
+               url('assets/digital7mono.ttf')   format('truetype');
+          font-weight: normal;
+          font-style: normal;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        body {
+            font-family: 'Digital7', monospace;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2c2c2c 100%);
+            color: #ff0000;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        /* Portrait Mode - Show rotate message */
+        .rotate-message {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .rotate-icon {
+            font-size: 80px;
+            margin-bottom: 30px;
+            animation: rotate 2s ease-in-out infinite;
+        }
+
+        @keyframes rotate {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(90deg); }
+        }
+
+        .rotate-title {
+            font-size: 48px;
+            color: #ff0000;
+            text-shadow: 0 0 10px #ff0000;
+            margin-bottom: 20px;
+        }
+
+        .rotate-subtitle {
+            font-size: 24px;
+            color: #ffff00;
+            margin-bottom: 30px;
+        }
+
+        .connection-status-portrait {
+            font-size: 18px;
+            color: #00ff00;
+        }
+
+        /* Landscape Mode - Game controls */
+        .game-controller {
+            display: none;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+            background: radial-gradient(circle at center, #2c2c2c 0%, #1a1a1a 100%);
+        }
+
+        .header-landscape {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 10;
+        }
+
+        .game-title {
+            font-size: 32px;
+            color: #ff0000;
+            text-shadow: 0 0 8px #ff0000;
+            margin-bottom: 5px;
+        }
+
+        .connection-info {
+            font-size: 16px;
+        }
+
+        .connection-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff0000;
+            margin-right: 6px;
+            box-shadow: 0 0 6px currentColor;
+        }
+
+        .connection-indicator.connected {
+            background: #00ff00;
+            color: #00ff00;
+        }
+
+        /* Slider Controls */
+        .slider-zone {
+            position: absolute;
+            width: 120px;
+            height: 60%;
+            top: 20%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid #444;
+            border-radius: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slider-zone.left {
+            left: 20px;
+            border-color: #0066ff;
+            box-shadow: inset 0 0 20px rgba(0, 102, 255, 0.1);
+        }
+
+        .slider-zone.right {
+            right: 20px;
+            border-color: #ff6600;
+            box-shadow: inset 0 0 20px rgba(255, 102, 0, 0.1);
+        }
+
+        .slider-track {
+            width: 8px;
+            height: 80%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            position: relative;
+            margin: 0 20px;
+        }
+
+        .dead-zone {
+            position: absolute;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            top: 30%; /* 40% dead zone = 20% on each side, centered */
+            height: 40%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .slider-thumb {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s ease;
+            cursor: grab;
+            border: 3px solid;
+            box-shadow: 0 0 15px currentColor;
+        }
+
+        .slider-thumb:active {
+            cursor: grabbing;
+            transform: translate(-50%, -50%) scale(1.2);
+        }
+
+        .slider-zone.left .slider-thumb {
+            background: linear-gradient(135deg, #0088ff, #0044aa);
+            border-color: #00aaff;
+            color: #00aaff;
+        }
+
+        .slider-zone.right .slider-thumb {
+            background: linear-gradient(135deg, #ff8800, #aa4400);
+            border-color: #ffaa00;
+            color: #ffaa00;
+        }
+
+        .slider-label {
+            position: absolute;
+            top: -30px;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 0 0 6px currentColor;
+        }
+
+        .slider-zone.left .slider-label {
+            color: #00aaff;
+        }
+
+        .slider-zone.right .slider-label {
+            color: #ffaa00;
+        }
+
+        .position-indicator {
+            position: absolute;
+            bottom: -40px;
+            font-size: 14px;
+            color: #888;
+            text-align: center;
+        }
+
+        .instructions-landscape {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            font-size: 16px;
+            color: #888;
+        }
+
+        .start-button {
+            background: linear-gradient(145deg, #006600, #004400);
+            border: 3px solid #00aa00;
+            border-radius: 15px;
+            color: #00ff00;
+            font-family: 'Digital7', monospace;
+            font-size: 24px;
+            font-weight: bold;
+            padding: 15px 30px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 15px rgba(0, 255, 0, 0.3);
+            text-shadow: 0 0 8px #00ff00;
+            margin-top: 20px;
+        }
+
+        .start-button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3), 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+
+        #start-btn-landscape {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* Responsive design */
+        @media (orientation: landscape) {
+            .rotate-message {
+                display: none;
+            }
+            .game-controller {
+                display: block;
+            }
+        }
+
+        @media (orientation: portrait) {
+            .rotate-message {
+                display: flex;
+            }
+            .game-controller {
+                display: none;
+            }
+        }
+
+        /* Prevent text selection and highlighting */
+        .slider-thumb::selection, .slider-thumb::-moz-selection {
+            background: transparent;
+        }
+    </style>
+</head>
+<body>
+    <!-- Portrait Mode - Rotate Device Message -->
+    <div class="rotate-message">
+        <div class="rotate-icon">📱</div>
+        <div class="rotate-title">ICE COLD BEER</div>
+        <div class="rotate-subtitle">Please rotate your device to landscape</div>
+        <div class="connection-status-portrait">
+            <span class="connection-indicator" id="connection-indicator-portrait"></span>
+            <span id="status-text-portrait">Connecting...</span>
+        </div>
+        <button id="start-btn-portrait" class="start-button hidden">START GAME</button>
+    </div>
+
+    <!-- Landscape Mode - Game Controller -->
+    <div class="game-controller">
+        <div class="header-landscape">
+            <div class="game-title">ICE COLD BEER</div>
+            <div class="connection-info">
+                <span class="connection-indicator" id="connection-indicator"></span>
+                <span id="status-text">Connecting...</span>
+            </div>
+        </div>
+
+        <!-- Left Slider (Left Lever) -->
+        <div class="slider-zone left" id="left-slider">
+            <div class="slider-label">LEFT LEVER</div>
+            <div class="slider-track">
+                <div class="dead-zone"></div>
+                <div class="slider-thumb" id="left-thumb"></div>
+            </div>
+            <div class="position-indicator" id="left-position">CENTER</div>
+        </div>
+
+        <!-- Right Slider (Right Lever) -->
+        <div class="slider-zone right" id="right-slider">
+            <div class="slider-label">RIGHT LEVER</div>
+            <div class="slider-track">
+                <div class="dead-zone"></div>
+                <div class="slider-thumb" id="right-thumb"></div>
+            </div>
+            <div class="position-indicator" id="right-position">CENTER</div>
+        </div>
+
+        <div class="instructions-landscape">
+            Touch sliders and swipe up/down to control the plank - direction matters, not position!
+        </div>
+        
+        <button id="start-btn-landscape" class="start-button hidden">START GAME</button>
+    </div>
+
+    <script>
+        class GameController {
+            constructor() {
+                this.ws = null;
+                this.isConnected = false;
+                
+                // Touch tracking with gesture recognition
+                this.leftTouch = {
+                    id: null,
+                    startY: 0,
+                    lastY: 0,
+                    active: false,
+                    currentDirection: 0 // -1 = up, 0 = neutral, 1 = down
+                };
+                this.rightTouch = {
+                    id: null,
+                    startY: 0,
+                    lastY: 0,
+                    active: false,
+                    currentDirection: 0 // -1 = up, 0 = neutral, 1 = down
+                };
+                
+                // Movement detection
+                this.movementThreshold = 15; // pixels to move before triggering direction
+                this.continuousInputInterval = null;
+                
+                this.gameStarted = false;
+                
+                this.init();
+            }
+
+            init() {
+                this.setupSliders();
+                this.setupStartButtons();
+                this.connect();
+                
+                // Reconnect on visibility change
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden && (!this.ws || this.ws.readyState !== WebSocket.OPEN)) {
+                        this.connect();
+                    }
+                });
+            }
+
+            setupStartButtons() {
+                const startBtnPortrait = document.getElementById('start-btn-portrait');
+                const startBtnLandscape = document.getElementById('start-btn-landscape');
+                
+                const handleStart = () => {
+                    if (this.isConnected && !this.gameStarted) {
+                        this.startGame();
+                    }
+                };
+                
+                startBtnPortrait.addEventListener('click', handleStart);
+                startBtnLandscape.addEventListener('click', handleStart);
+            }
+
+            startGame() {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify({
+                        type: 'startGame'
+                    }));
+                    this.gameStarted = true;
+                    this.updateStartButtonVisibility();
+                }
+            }
+
+            setupSliders() {
+                const leftSlider = document.getElementById('left-slider');
+                const rightSlider = document.getElementById('right-slider');
+                
+                // Left slider events
+                leftSlider.addEventListener('touchstart', (e) => this.handleTouchStart(e, 'left'), { passive: false });
+                leftSlider.addEventListener('touchmove', (e) => this.handleTouchMove(e, 'left'), { passive: false });
+                leftSlider.addEventListener('touchend', (e) => this.handleTouchEnd(e, 'left'), { passive: false });
+                
+                // Right slider events
+                rightSlider.addEventListener('touchstart', (e) => this.handleTouchStart(e, 'right'), { passive: false });
+                rightSlider.addEventListener('touchmove', (e) => this.handleTouchMove(e, 'right'), { passive: false });
+                rightSlider.addEventListener('touchend', (e) => this.handleTouchEnd(e, 'right'), { passive: false });
+                
+                // Mouse events for desktop testing
+                leftSlider.addEventListener('mousedown', (e) => this.handleMouseStart(e, 'left'));
+                rightSlider.addEventListener('mousedown', (e) => this.handleMouseStart(e, 'right'));
+                
+                document.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                document.addEventListener('mouseup', (e) => this.handleMouseEnd(e));
+                
+                // Prevent context menu
+                document.addEventListener('contextmenu', (e) => e.preventDefault());
+            }
+
+            handleTouchStart(event, side) {
+                event.preventDefault();
+                const touch = event.changedTouches[0];
+                
+                const touchData = side === 'left' ? this.leftTouch : this.rightTouch;
+                touchData.id = touch.identifier;
+                touchData.startY = touch.clientY;
+                touchData.lastY = touch.clientY;
+                touchData.active = true;
+                
+                this.updateSliderVisual(side, 0); // Start at center
+            }
+
+            handleTouchMove(event, side) {
+                event.preventDefault();
+                
+                const touchData = side === 'left' ? this.leftTouch : this.rightTouch;
+                
+                for (let touch of event.changedTouches) {
+                    if (touch.identifier === touchData.id && touchData.active) {
+                        this.processGestureMovement(touch, side);
+                        break;
+                    }
+                }
+            }
+
+            handleTouchEnd(event, side) {
+                event.preventDefault();
+                
+                const touchData = side === 'left' ? this.leftTouch : this.rightTouch;
+                
+                for (let touch of event.changedTouches) {
+                    if (touch.identifier === touchData.id && touchData.active) {
+                        touchData.active = false;
+                        touchData.id = null;
+                        touchData.currentDirection = 0;
+                        
+                        this.updateSliderVisual(side, 0); // Return to center
+                        
+                        // If no touches are active, stop continuous input
+                        if (!this.leftTouch.active && !this.rightTouch.active) {
+                            this.stopContinuousInput();
+                        } else {
+                            // Update continuous input for remaining active touches
+                            this.sendCurrentInput();
+                        }
+                        break;
+                    }
+                }
+            }
+
+            handleMouseStart(event, side) {
+                this.updateSliderPosition(event, side);
+                this[side + 'MouseDown'] = true;
+            }
+
+            handleMouseMove(event) {
+                if (this.leftMouseDown) {
+                    this.updateSliderPosition(event, 'left');
+                }
+                if (this.rightMouseDown) {
+                    this.updateSliderPosition(event, 'right');
+                }
+            }
+
+            handleMouseEnd(event) {
+                if (this.leftMouseDown) {
+                    this.leftMouseDown = false;
+                    this.leftPosition = 0;
+                    this.updateSliderVisual('left');
+                    this.sendInput();
+                }
+                if (this.rightMouseDown) {
+                    this.rightMouseDown = false;
+                    this.rightPosition = 0;
+                    this.updateSliderVisual('right');
+                    this.sendInput();
+                }
+            }
+
+            processGestureMovement(touch, side) {
+                const touchData = side === 'left' ? this.leftTouch : this.rightTouch;
+                
+                // Calculate movement from start position
+                const totalDeltaY = touch.clientY - touchData.startY;
+                
+                // Update tracking
+                touchData.lastY = touch.clientY;
+                
+                // Determine direction based on total movement from start
+                let newDirection = 0;
+                if (Math.abs(totalDeltaY) > this.movementThreshold) {
+                    if (totalDeltaY < 0) {
+                        newDirection = -1; // Moving up
+                    } else if (totalDeltaY > 0) {
+                        newDirection = 1; // Moving down
+                    }
+                }
+                
+                // Update direction if it changed
+                if (newDirection !== touchData.currentDirection) {
+                    touchData.currentDirection = newDirection;
+                    this.updateSliderVisual(side, newDirection);
+                    this.startContinuousInput();
+                }
+            }
+
+            startContinuousInput() {
+                // Clear any existing interval
+                if (this.continuousInputInterval) {
+                    clearInterval(this.continuousInputInterval);
+                }
+                
+                // Start sending continuous input based on current touch states
+                this.continuousInputInterval = setInterval(() => {
+                    this.sendCurrentInput();
+                }, 16); // ~60fps updates
+                
+                // Send immediately
+                this.sendCurrentInput();
+            }
+            
+            sendCurrentInput() {
+                const inputState = {
+                    leftUp: this.leftTouch.active && this.leftTouch.currentDirection < 0,
+                    leftDown: this.leftTouch.active && this.leftTouch.currentDirection > 0,
+                    rightUp: this.rightTouch.active && this.rightTouch.currentDirection < 0,
+                    rightDown: this.rightTouch.active && this.rightTouch.currentDirection > 0
+                };
+                
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify(inputState));
+                }
+            }
+            
+            stopContinuousInput() {
+                if (this.continuousInputInterval) {
+                    clearInterval(this.continuousInputInterval);
+                    this.continuousInputInterval = null;
+                }
+                
+                // Send neutral state
+                this.sendInput();
+            }
+
+            updateSliderVisual(side, gestureDirection = 0) {
+                const thumb = document.getElementById(side + '-thumb');
+                const positionLabel = document.getElementById(side + '-position');
+                
+                // Update thumb position based on gesture direction
+                let thumbPercent = 50; // Default to center
+                if (gestureDirection < 0) {
+                    thumbPercent = 30; // Show up movement
+                } else if (gestureDirection > 0) {
+                    thumbPercent = 70; // Show down movement
+                }
+                
+                thumb.style.top = `${thumbPercent}%`;
+                
+                // Update position text based on gesture
+                if (gestureDirection === 0) {
+                    positionLabel.textContent = 'CENTER';
+                } else if (gestureDirection < 0) {
+                    positionLabel.textContent = 'UP (ACTIVE)';
+                } else {
+                    positionLabel.textContent = 'DOWN (ACTIVE)';
+                }
+                
+                // Add visual feedback with color changes
+                if (gestureDirection !== 0) {
+                    thumb.style.transform = 'translate(-50%, -50%) scale(1.2)';
+                } else {
+                    thumb.style.transform = 'translate(-50%, -50%) scale(1.0)';
+                }
+            }
+
+            sendInput() {
+                // This function is now handled by sendGestureInput
+                // Sending neutral state for when touches end
+                const inputState = {
+                    leftUp: false,
+                    leftDown: false,
+                    rightUp: false,
+                    rightDown: false
+                };
+                
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify(inputState));
+                }
+            }
+
+            connect() {
+                // Get session code from URL (case insensitive)
+                const urlParams = new URLSearchParams(window.location.search);
+                const sessionCode = urlParams.get('session') || urlParams.get('SESSION');
+                
+                if (!sessionCode) {
+                    this.showError('No session code provided. Please scan a valid QR code.');
+                    return;
+                }
+                
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}?type=controller&session=${sessionCode}`;
+                
+                try {
+                    this.ws = new WebSocket(wsUrl);
+                    
+                    this.ws.onopen = () => {
+                        this.isConnected = true;
+                        this.updateConnectionStatus();
+                    };
+
+                    this.ws.onmessage = (event) => {
+                        try {
+                            const data = JSON.parse(event.data);
+                            if (data.type === 'error') {
+                                this.showError(data.message);
+                            }
+                        } catch (error) {
+                            console.error('Error parsing server message:', error);
+                        }
+                    };
+
+                    this.ws.onclose = () => {
+                        this.isConnected = false;
+                        this.updateConnectionStatus();
+                        // Don't auto-reconnect for invalid sessions
+                    };
+
+                    this.ws.onerror = (error) => {
+                        console.error('WebSocket error:', error);
+                        this.isConnected = false;
+                        this.updateConnectionStatus();
+                    };
+
+                } catch (error) {
+                    console.error('Connection error:', error);
+                    this.showError('Failed to connect to game server.');
+                }
+            }
+
+            showError(message) {
+                // Hide the game interface and show error
+                document.querySelector('.rotate-message').style.display = 'none';
+                document.querySelector('.game-controller').style.display = 'none';
+                
+                // Create error display
+                const errorDiv = document.createElement('div');
+                errorDiv.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(135deg, #1a1a1a 0%, #2c2c2c 100%);
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    color: #ff0000;
+                    font-family: 'Digital7', monospace;
+                    text-align: center;
+                    padding: 20px;
+                    z-index: 1000;
+                `;
+                
+                errorDiv.innerHTML = `
+                    <div style="font-size: 64px; margin-bottom: 30px;">❌</div>
+                    <div style="font-size: 48px; color: #ff0000; text-shadow: 0 0 10px #ff0000; margin-bottom: 20px;">ERROR</div>
+                    <div style="font-size: 24px; color: #ffff00; margin-bottom: 30px;">${message}</div>
+                    <div style="font-size: 18px; color: #888;">Please scan a new QR code from the main screen.</div>
+                `;
+                
+                document.body.appendChild(errorDiv);
+            }
+
+            updateConnectionStatus() {
+                const indicators = [
+                    document.getElementById('connection-indicator'),
+                    document.getElementById('connection-indicator-portrait')
+                ];
+                const statusTexts = [
+                    document.getElementById('status-text'),
+                    document.getElementById('status-text-portrait')
+                ];
+                
+                indicators.forEach(indicator => {
+                    if (indicator) {
+                        if (this.isConnected) {
+                            indicator.classList.add('connected');
+                        } else {
+                            indicator.classList.remove('connected');
+                        }
+                    }
+                });
+
+                statusTexts.forEach(statusText => {
+                    if (statusText) {
+                        statusText.textContent = this.isConnected ? 'Connected' : 'Connecting...';
+                    }
+                });
+
+                this.updateStartButtonVisibility();
+            }
+
+            updateStartButtonVisibility() {
+                const startBtnPortrait = document.getElementById('start-btn-portrait');
+                const startBtnLandscape = document.getElementById('start-btn-landscape');
+                
+                if (this.isConnected && !this.gameStarted) {
+                    startBtnPortrait.classList.remove('hidden');
+                    startBtnLandscape.classList.remove('hidden');
+                } else {
+                    startBtnPortrait.classList.add('hidden');
+                    startBtnLandscape.classList.add('hidden');
+                }
+            }
+        }
+
+        // Start the controller when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            new GameController();
+        });
+    </script>
+</body>
+</html>
