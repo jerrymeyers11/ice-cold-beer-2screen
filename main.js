@@ -207,7 +207,7 @@ class ConnectionScene extends Phaser.Scene {
       const sessionText = this.add.text(0, 100, `Session Code: ${this.sessionCode}`, {
         fontFamily: 'Digital7',
         fontSize: '48px',
-        color: '#00ff00',
+        color: '#008000',
         align: 'center'
       }).setOrigin(0.5);
       this.qrContainer.add(sessionText);
@@ -216,7 +216,7 @@ class ConnectionScene extends Phaser.Scene {
       const urlText = this.add.text(0, 200, controllerUrl, {
         fontFamily: 'Digital7',
         fontSize: '20px',
-        color: '#aaaaaa',
+        color: '#333333',
         align: 'center'
       }).setOrigin(0.5);
       this.qrContainer.add(urlText);
@@ -258,9 +258,8 @@ class ConnectionScene extends Phaser.Scene {
           this.controllersConnected = data.controllersConnected;
           this.updateConnectionStatus();
         } else if (data.type === 'startGame') {
-          // Hide the modal and start the game when commanded from controller
-          this.hideModal();
-          this.scene.get('GameScene').startGame();
+          // Switch to the game scene when commanded from controller
+          this.scene.start('GameScene');
         } else if (data.type === 'input') {
           // Update remote inputs
           remoteInputs.leftUp = data.leftUp || false;
@@ -333,9 +332,8 @@ class GameScene extends Phaser.Scene {
     console.log(`Adjusted scale factor: ${this.scaleFactor.toFixed(3)}`);
     console.log(`Lever step: ${BASE_LEVER_STEP} → ${this.leverStep.toFixed(2)}`);
     
-    // Initialize game but don't start yet - wait for controller
+    // Initialize and start the game immediately
     this.setupGame();
-    this.gameStarted = false;
   }
 
   setupGame() {
@@ -444,14 +442,7 @@ class GameScene extends Phaser.Scene {
     rightRail = this.matter.add.rectangle(rightRailInitialX, initialPlankPhysicsY, railWidth, railHeight, { isStatic:true });
   }
 
-  startGame() {
-    this.gameStarted = true;
-    console.log('Game started!');
-  }
-
   update() {
-    // Only run game logic if game has started
-    if (!this.gameStarted) return;
     // Modified input handling to include remote inputs
     const lu = this.keys.leftUp.isDown    || touchInputs.leftUp    || remoteInputs.leftUp;
     const ld = this.keys.leftDown.isDown  || touchInputs.leftDown  || remoteInputs.leftDown;
