@@ -4,7 +4,7 @@ const path = require('path');
 const os = require('os');
 const WebSocket = require('ws');
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Create HTTP server for serving static files
 const server = http.createServer((req, res) => {
